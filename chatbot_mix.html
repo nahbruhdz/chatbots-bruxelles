@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mix Brussels — Concierge IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--p1:#2c3e50;--p2:#4a6741;--ac:#c9a84c;--bg:rgba(248,245,238,.82);--bot:rgba(255,255,255,.75);--brd:rgba(100,80,50,.2);--txt:#2a2010;--soft:rgba(50,40,20,.5);--sug:rgba(255,255,255,.7);--sug-t:#3a3020;--ha:#1a2330;--hb:#0e1a28}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#f5f0e8 0%,#e8e0cc 50%,#d4c8a8 100%);min-height:100vh}
+#ct{position:fixed;bottom:28px;right:28px;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--ha),var(--p2));border:none;cursor:pointer;box-shadow:0 6px 24px rgba(44,62,80,.4);display:flex;align-items:center;justify-content:center;z-index:999;transition:transform .28s cubic-bezier(.34,1.56,.64,1);animation:tpop .6s 1.2s both}
+@keyframes tpop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+#ct:hover{transform:scale(1.1) rotate(-8deg)}
+#ct svg{width:26px;height:26px;fill:#c9a84c}
+#nr{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(201,168,76,.35);animation:rpulse 2.5s infinite}
+@keyframes rpulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(1.4);opacity:0}100%{transform:scale(1.4);opacity:0}}
+#cw{position:fixed;bottom:108px;right:28px;width:372px;max-height:590px;border-radius:26px;background:var(--bg);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid var(--brd);box-shadow:0 20px 60px rgba(30,40,50,.25),0 0 0 1px rgba(255,255,255,.3) inset;display:flex;flex-direction:column;overflow:hidden;z-index:998;opacity:0;transform:scale(.85) translateY(24px);pointer-events:none;transition:opacity .38s cubic-bezier(.34,1.56,.64,1),transform .38s cubic-bezier(.34,1.56,.64,1)}
+#cw.open{opacity:1;transform:scale(1) translateY(0);pointer-events:all}
+.hdr{background:linear-gradient(145deg,var(--ha),var(--hb));padding:18px 20px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-30px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(201,168,76,.15),transparent 70%)}
+.hdr::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
+.av{width:44px;height:44px;border-radius:12px;background:rgba(201,168,76,.12);border:1.5px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.hn{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:#e8d9b0;letter-spacing:.06em}
+.hs{font-size:10.5px;color:rgba(232,217,176,.45);display:flex;align-items:center;gap:5px;margin-top:3px}
+.sd{width:6px;height:6px;background:#8fc78f;border-radius:50%;animation:sdp 2s infinite}
+@keyframes sdp{0%,100%{opacity:1}50%{opacity:.4}}
+.cb{margin-left:auto;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:8px;width:30px;height:30px;cursor:pointer;color:rgba(232,217,176,.55);font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cb:hover{background:rgba(201,168,76,.22)}
+.msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(44,62,80,.15) transparent;max-height:300px}
+.m{max-width:84%;padding:11px 15px;border-radius:20px;font-size:13.5px;line-height:1.58;opacity:0;animation:min .32s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes min{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.m.b{background:var(--bot);border:1px solid var(--brd);border-bottom-left-radius:6px;align-self:flex-start;color:var(--txt);box-shadow:0 2px 10px rgba(30,40,50,.07)}
+.m.u{background:linear-gradient(135deg,var(--p1),var(--p2));color:#e8d9b0;border-bottom-right-radius:6px;align-self:flex-end;box-shadow:0 3px 14px rgba(44,62,80,.3)}
+.typ{display:flex;align-items:center;gap:5px;padding:12px 16px;background:var(--bot);border:1px solid var(--brd);border-radius:20px;border-bottom-left-radius:6px;align-self:flex-start;max-width:72px;opacity:0;animation:min .3s ease forwards}
+.typ span{width:7px;height:7px;background:var(--ac);border-radius:50%;animation:bn 1.2s infinite}
+.typ span:nth-child(2){animation-delay:.2s}.typ span:nth-child(3){animation-delay:.4s}
+@keyframes bn{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+.sugs{padding:8px 14px 10px;display:flex;flex-wrap:wrap;gap:6px}
+.sb{background:var(--sug);border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:7px 14px;font-size:12px;color:var(--sug-t);cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1)}
+.sb:hover{background:rgba(201,168,76,.1);border-color:var(--ac);transform:translateY(-2px);box-shadow:0 4px 12px rgba(201,168,76,.18)}
+.stats{background:rgba(44,62,80,.04);border-top:1px solid rgba(100,80,50,.12);padding:8px 14px;display:flex;justify-content:space-around}
+.sn{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;color:var(--ac);text-align:center}
+.sl{font-size:9.5px;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+.inp{padding:10px 14px 16px;border-top:1px solid var(--brd);display:flex;gap:9px;align-items:flex-end}
+textarea{flex:1;border:1px solid var(--brd);border-radius:20px;padding:10px 15px;font-size:13px;font-family:'Inter',sans-serif;background:rgba(255,255,255,.7);color:var(--txt);outline:none;resize:none;max-height:80px;line-height:1.4;transition:border-color .2s,box-shadow .2s}
+textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(201,168,76,.1)}
+textarea::placeholder{color:rgba(50,40,20,.35)}
+.snd{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .22s cubic-bezier(.34,1.56,.64,1);box-shadow:0 4px 16px rgba(44,62,80,.3)}
+.snd:hover{transform:scale(1.12)}.snd:active{transform:scale(.95)}
+.snd svg{width:17px;height:17px;fill:#c9a84c}
+</style>
+</head>
+<body>
+<button id="ct" onclick="toggleChat()">
+  <div id="nr"></div>
+  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+</button>
+<div id="cw">
+  <div class="hdr">
+    <div class="av">🏨</div>
+    <div><div class="hn">Mix Brussels — Concierge</div><div class="hs"><span class="sd"></span>Boutique hôtel · Bruxelles</div></div>
+    <button class="cb" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="sugs" id="sugs"></div>
+  <div class="stats">
+    <div><div class="sn" id="s1">0</div><div class="sl">Chambres</div></div>
+    <div><div class="sn" id="s2">0</div><div class="sl">Étoiles</div></div>
+    <div><div class="sn" id="s3">0</div><div class="sl">Quartiers</div></div>
+  </div>
+  <div class="inp">
+    <textarea id="ti" rows="1" placeholder="Votre question…" onkeydown="hk(event)" oninput="ar(this)"></textarea>
+    <button class="snd" onclick="send()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+<script>
+const GK='AQ.Ab8RN6JOrD5kAHas732Emx1gClfSMgPCC9TnYny0dM6kgvCVBA';
+const GU=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`;
+const XK='xai-8XfKzukzOVzhIqKlrCoMiiMp6UQbVtO7cb9ng6iSyKObCsDtQ5JYQgmQ9CRI0lpMNI0dPEMPYEUvvm6V';
+const CTX=`Tu es le concierge IA de Mix Brussels, boutique hôtel design au cœur de Bruxelles. Mix propose des chambres modernes (standard, supérieure, suite), un bar-restaurant branché, des espaces événementiels privatisables et un service conciergerie premium 24h/7j. Site : mix.brussels. Email : hotel@mix.brussels. Tél : +32 2 669 48 22. Offres spéciales disponibles en réservant en direct. Réponds en français, ton élégant et professionnel mais chaleureux. Max 2 phrases + 1 emoji. Sois précis et pratique.`;
+const SF={
+  initial:["🛏️ Réserver une chambre","🍾 Bar & restaurant du Mix","🎪 Privatiser pour un événement","📍 Quartier et accès depuis l'aéroport"],
+  afterRDV:["📅 Disponibilités ce week-end ?","💰 Tarif nuit en suite ?","🔑 Heure d'arrivée et départ ?","❓ Annulation gratuite ?"],
+  afterBar:["🍽️ Menu du restaurant","🍸 Cocktails signature","🕐 Horaires bar & resto","🎵 Soirées et événements"],
+  afterEvent:["👥 Capacité des espaces","🎂 Formules réunion + repas","📋 Demande de devis","💡 Séminaires et team buildings"],
+  afterQuartier:["🚇 Transport depuis Bruxelles-Midi ?","🏛️ Musées et attractions proches","🛍️ Shopping et restaurants alentour","🚕 Navette ou taxi à l'arrivée ?"]
+};
+let H=[],state='initial',open=false;
+const _RC={};
+const _SR={
+  rdv:["Réservez votre chambre en direct sur mix.brussels et bénéficiez de nos meilleures offres exclusives 🏨","Disponibilités en temps réel sur mix.brussels — chambres standard, supérieure et suites 🛏️","Contactez-nous au +32 2 669 48 22 ou hotel@mix.brussels pour une réservation personnalisée ✨"],
+  tarifs:["Nos nuits débutent à 120€ en chambre standard — les suites à partir de 220€ avec vue 💰","Tarifs préférentiels pour séjours de 3 nuits+ disponibles sur mix.brussels 🏨","Petit-déjeuner inclus dans nos formules supérieures — détails sur mix.brussels 🍳"],
+  bar:["Notre bar mixology est ouvert jusqu'à 1h du matin — cocktails signature et vins de qualité 🍸","Le restaurant Mix propose une cuisine fusion belge-internationale — menus à partir de 28€ 🍽️","Happy hour de 17h à 19h au bar — -30% sur tous les cocktails ✨"],
+  event:["Nos espaces privatisables accueillent de 10 à 120 personnes — idéal séminaires et réceptions 🎪","Formules tout-compris : salle + catering + hébergement — devis sur mesure via hotel@mix.brussels 📋","Expérience événementielle complète avec coordinateur dédié — contactez-nous pour un devis ✨"],
+  quartier:["Mix Brussels est situé en plein cœur de la ville, à 5 min à pied de la Grand-Place 📍","Accès direct depuis l'aéroport : navette Brussels Airport Express (35 min) ou taxi (25-30 min) 🚖","Quartier animé : restaurants, bars, musées et shopping à 2 pas — plan disponible à la réception 🗺️"],
+  default:["Je suis votre concierge virtuel Mix Brussels — chambres, bar, événements, je gère tout ! 🏨","Pour toute demande : hotel@mix.brussels ou mix.brussels — réponse immédiate 24h/7j 🌟","Comment puis-je rendre votre séjour à Bruxelles inoubliable ? ✨"]
+};
+function inventer(msg){
+  const w=msg.toLowerCase().split(/[\s,!?]+/).filter(x=>x.length>3&&!['avec','pour','dans','vous','nous','les','des','une','est','que','comment','quand','quel','quelle'].includes(x));
+  const t=w.find(x=>x.length>4)||'votre demande';
+  const nouns=["séjour", "chambre", "service", "expérience", "confort"];
+  const verbs=["organiser", "prévoir", "personnaliser", "réserver", "coordonner"];
+  const adj=["sur mesure", "premium", "personnalisé"];
+  const rn=nouns[_RC._i1%nouns.length];const rv=verbs[_RC._i2%verbs.length];const ra=adj[_RC._i3%adj.length];
+  _RC._i1=(_RC._i1||0)+1;_RC._i2=(_RC._i2||0)+1;_RC._i3=(_RC._i3||0)+1;
+  const templates=[
+    `Concernant ${t}, chez Mix Brussels nous savons ${rv} cela de façon ${ra} — consultez-nous pour une réponse sur mesure ✨`,
+    `Bonne question ! Notre expertise en hôtel boutique design nous permet d'aborder ${t} avec notre ${rn} ${ra} 🌟`,
+    `Pour ${t}, nous recommandons une approche ${ra} basée sur notre expérience en hôtel boutique design 💬`,
+    `${t.charAt(0).toUpperCase()+t.slice(1)} est quelque chose que nous traitons régulièrement — notre équipe Mix Brussels vous guidera avec notre ${rn} ${ra} ✨`
+  ];
+  const idx=((_RC._iv||0)%templates.length);_RC._iv=(_RC._iv||0)+1;
+  return templates[idx];
+}
+function rot(k){_RC[k]=(_RC[k]||0);const r=_SR[k][_RC[k]%_SR[k].length];_RC[k]++;return r;}
+function A(){const C=window.AudioContext||window.webkitAudioContext;if(!A._c)A._c=new C();return A._c;}
+function snd(t){try{const c=A();if(c.state==='suspended')c.resume();const o=c.createOscillator(),g=c.createGain(),n=c.currentTime;o.connect(g);g.connect(c.destination);o.type='sine';if(t==='o'){o.frequency.setValueAtTime(320,n);o.frequency.exponentialRampToValueAtTime(520,n+.18);g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.07,n+.06);g.gain.exponentialRampToValueAtTime(.001,n+.6);}else if(t==='s'){o.frequency.setValueAtTime(480,n);o.frequency.exponentialRampToValueAtTime(640,n+.1);g.gain.setValueAtTime(.05,n);g.gain.exponentialRampToValueAtTime(.001,n+.18);}else{o.frequency.setValueAtTime(560,n);o.frequency.setValueAtTime(440,n+.12);g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(.045,n+.03);g.gain.exponentialRampToValueAtTime(.001,n+.35);}o.start(n);o.stop(n+.7);}catch(e){}}
+function toggleChat(){const w=document.getElementById('cw');open=!open;w.classList.toggle('open',open);if(open){snd('o');if(H.length===0)setTimeout(()=>bot("Bienvenue au Mix Brussels 🏨 Je suis votre concierge IA — chambres, restaurant, événements. Comment puis-je vous aider ?"),420);}}
+function bot(t){const d=document.getElementById('msgs');const el=document.createElement('div');el.className='m b';el.textContent=t;d.appendChild(el);d.scrollTop=d.scrollHeight;snd('r');sugs();}
+function usr(t){const d=document.getElementById('msgs');const el=document.createElement('div');el.className='m u';el.textContent=t;d.appendChild(el);d.scrollTop=d.scrollHeight;}
+function showTyp(){const d=document.getElementById('msgs');const el=document.createElement('div');el.className='typ';el.id='ty';el.innerHTML='<span></span><span></span><span></span>';d.appendChild(el);d.scrollTop=d.scrollHeight;}
+function rmTyp(){document.getElementById('ty')?.remove();}
+function dst(m){const v=m.toLowerCase();if(v.includes('rdv')||v.includes('réserv')||v.includes('chambre')||v.includes('nuit')||v.includes('séjour'))return 'afterRDV';if(v.includes('bar')||v.includes('restaurant')||v.includes('cocktail')||v.includes('dîner')||v.includes('manger'))return 'afterBar';if(v.includes('événement')||v.includes('privatiser')||v.includes('séminaire')||v.includes('réception'))return 'afterEvent';if(v.includes('quartier')||v.includes('accès')||v.includes('aéroport')||v.includes('transport')||v.includes('où'))return 'afterQuartier';return state;}
+function smrt(m){const v=m.toLowerCase();if(v.includes('réserv')||v.includes('chambre')||v.includes('nuit'))return rot('rdv');if(v.includes('tarif')||v.includes('prix')||v.includes('combien'))return rot('tarifs');if(v.includes('bar')||v.includes('restaurant')||v.includes('cocktail'))return rot('bar');if(v.includes('événement')||v.includes('privatiser')||v.includes('séminaire'))return rot('event');if(v.includes('quartier')||v.includes('accès')||v.includes('aéroport'))return rot('quartier');return inventer(msg);}
+function sugs(){const s=SF[state]||SF.initial;const c=document.getElementById('sugs');c.innerHTML='';s.forEach(t=>{const b=document.createElement('button');b.className='sb';b.textContent=t;b.onclick=()=>send(t);c.appendChild(b);});}
+async function send(p){const ti=document.getElementById('ti');const txt=(p||ti.value).trim();if(!txt)return;ti.value='';ar(ti);document.getElementById('sugs').innerHTML='';usr(txt);snd('s');H.push({role:'user',parts:[{text:txt}]});state=dst(txt);showTyp();
+let r=null;
+try{const rs=await fetch(GU,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:CTX}]},contents:H,generationConfig:{maxOutputTokens:150,temperature:.8}})});if(!rs.ok)throw 0;const d=await rs.json();r=d?.candidates?.[0]?.content?.parts?.[0]?.text||null;}catch(e){}
+if(!r){try{const ms=[{role:'system',content:CTX},...H.slice(0,-1).map(h=>({role:h.role==='model'?'assistant':'user',content:h.parts[0].text})),{role:'user',content:txt}];const rs=await fetch('https://api.x.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${XK}`},body:JSON.stringify({model:'grok-beta',messages:ms,max_tokens:150})});if(!rs.ok)throw 0;const d=await rs.json();r=d?.choices?.[0]?.message?.content||null;}catch(e){}}
+if(!r)r=smrt(txt);
+rmTyp();H.push({role:'model',parts:[{text:r}]});bot(r);}
+function hk(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function ar(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function cnt(id,t,s=''){const el=document.getElementById(id);let c=0;const st=Math.ceil(t/40);const tm=setInterval(()=>{c=Math.min(c+st,t);el.textContent=c+s;if(c>=t)clearInterval(tm);},40);}
+window.addEventListener('load',()=>{cnt('s1',32);cnt('s2',4,'★');cnt('s3',3);sugs();});
+</script>
+</body>
+</html>

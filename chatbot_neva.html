@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neva Brussels — Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,600;1,300&family=Manrope:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--p1:#6b5c50;--p2:#8a7868;--p3:#c4a890;--bg-chat:rgba(250,246,242,.82);--msg-bot:rgba(255,255,255,.72);--border:rgba(107,92,80,.22);--text:#3d3028;--text-soft:rgba(61,48,40,.52);--sug-bg:rgba(255,255,255,.68);--sug-text:#5a4638;--sug-border:rgba(107,92,80,.28);--input-bg:rgba(255,255,255,.7);--hdr-a:#1c1410;--hdr-b:#2e2218;--stat-color:#6b5c50}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Manrope',sans-serif;background:linear-gradient(145deg,#f2ede8 0%,#e6ddd4 50%,#d8ccc0 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+
+#chat-trigger{position:fixed;bottom:28px;right:28px;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;box-shadow:0 6px 24px rgba(107,92,80,.42);display:flex;align-items:center;justify-content:center;z-index:999;transition:transform .28s cubic-bezier(.34,1.56,.64,1);animation:trigger-pop .6s 1s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes trigger-pop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+#chat-trigger:hover{transform:scale(1.1)}
+#chat-trigger svg{width:26px;height:26px;fill:#f5ede0}
+#notif-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(107,92,80,.38);animation:ring-pulse 2.5s infinite}
+@keyframes ring-pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(1.4);opacity:0}100%{transform:scale(1.4);opacity:0}}
+
+#chat-window{position:fixed;bottom:108px;right:28px;width:372px;max-height:605px;border-radius:26px;background:var(--bg-chat);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border:1px solid var(--border);box-shadow:0 20px 60px rgba(60,44,32,.16),0 0 0 1px rgba(255,255,255,.55) inset;display:flex;flex-direction:column;overflow:hidden;z-index:998;opacity:0;transform:scale(.87) translateY(24px);pointer-events:none;transition:opacity .38s cubic-bezier(.34,1.56,.64,1),transform .38s cubic-bezier(.34,1.56,.64,1)}
+#chat-window.open{opacity:1;transform:scale(1) translateY(0);pointer-events:all}
+
+.chat-header{background:linear-gradient(145deg,var(--hdr-a),var(--hdr-b));padding:20px;display:flex;align-items:center;gap:13px;position:relative}
+.chat-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(196,168,144,.5),transparent)}
+.avatar{width:44px;height:44px;border-radius:12px;background:rgba(196,168,144,.18);border:1px solid rgba(196,168,144,.32);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.header-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:400;color:#f2e8d8;letter-spacing:.06em;font-style:italic}
+.header-sub{font-size:11px;color:rgba(242,232,216,.48);display:flex;align-items:center;gap:5px;margin-top:3px}
+.status-dot{width:6px;height:6px;background:#a0c890;border-radius:50%;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.close-btn{margin-left:auto;background:rgba(196,168,144,.12);border:1px solid rgba(196,168,144,.22);border-radius:8px;width:30px;height:30px;cursor:pointer;color:rgba(242,232,216,.62);font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.close-btn:hover{background:rgba(196,168,144,.26)}
+
+.chat-messages{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(107,92,80,.16) transparent;max-height:305px}
+.msg{max-width:84%;padding:11px 15px;border-radius:20px;font-size:13.5px;line-height:1.6;opacity:0;animation:msg-in .32s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes msg-in{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.msg.bot{background:var(--msg-bot);border:1px solid var(--border);border-bottom-left-radius:6px;align-self:flex-start;color:var(--text);box-shadow:0 2px 10px rgba(60,44,32,.08)}
+.msg.user{background:linear-gradient(135deg,var(--p1),var(--p2));color:#f5ede0;border-bottom-right-radius:6px;align-self:flex-end;box-shadow:0 2px 14px rgba(107,92,80,.3)}
+
+.typing{display:flex;align-items:center;gap:5px;padding:12px 16px;background:var(--msg-bot);border:1px solid var(--border);border-radius:20px;border-bottom-left-radius:6px;align-self:flex-start;max-width:72px;opacity:0;animation:msg-in .3s ease forwards}
+.typing span{width:7px;height:7px;background:var(--p2);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+.suggestions{padding:8px 14px 10px;display:flex;flex-wrap:wrap;gap:6px}
+.sug-btn{background:var(--sug-bg);border:1px solid var(--sug-border);border-radius:20px;padding:7px 14px;font-size:12px;font-family:'Manrope',sans-serif;color:var(--sug-text);cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1)}
+.sug-btn:hover{background:rgba(107,92,80,.1);border-color:var(--p1);transform:translateY(-2px);box-shadow:0 4px 12px rgba(107,92,80,.18)}
+
+.chat-input-area{padding:10px 14px 16px;border-top:1px solid var(--border);display:flex;gap:9px;align-items:flex-end}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 15px;font-size:13px;font-family:'Manrope',sans-serif;background:var(--input-bg);color:var(--text);outline:none;resize:none;max-height:80px;line-height:1.4;transition:border-color .2s,box-shadow .2s}
+.chat-input:focus{border-color:var(--p1);box-shadow:0 0 0 3px rgba(107,92,80,.1)}
+.chat-input::placeholder{color:rgba(80,60,44,.36)}
+
+.send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(107,92,80,.36);transition:transform .22s cubic-bezier(.34,1.56,.64,1);animation:send-glow 3s infinite}
+@keyframes send-glow{0%,100%{box-shadow:0 4px 16px rgba(107,92,80,.36)}50%{box-shadow:0 4px 26px rgba(107,92,80,.62)}}
+.send-btn:hover{transform:scale(1.12)}.send-btn:active{transform:scale(.95)}
+.send-btn svg{width:17px;height:17px;fill:#f5ede0}
+
+.stats-bar{background:rgba(107,92,80,.05);border-top:1px solid var(--border);padding:8px 14px;display:flex;justify-content:space-around}
+.stat{text-align:center}
+.stat-num{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--stat-color)}
+.stat-label{font-size:9.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.06em}
+
+
+</style>
+</head>
+<body>
+<button id="chat-trigger" onclick="toggleChat()">
+  <div id="notif-ring"></div>
+  <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+</button>
+
+<div id="chat-window">
+  <div class="chat-header">
+    <div class="avatar">✦</div>
+    <div>
+      <div class="header-name">Neva Brussels</div>
+      <div class="header-sub"><span class="status-dot"></span>Concept store · Lifestyle & bien-être</div>
+    </div>
+    <button class="close-btn" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-messages" id="messages"></div>
+  <div class="suggestions" id="suggestions"></div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num" id="s1">0</div><div class="stat-label">Produits sélectionnés</div></div>
+    <div class="stat"><div class="stat-num" id="s2">0</div><div class="stat-label">Marques exclusives</div></div>
+    <div class="stat"><div class="stat-num" id="s3">0</div><div class="stat-label">Ans à Bruxelles</div></div>
+  </div>
+
+  
+
+  <div class="chat-input-area">
+    <textarea id="chat-input" class="chat-input" rows="1" placeholder="Votre question…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<script>
+const GEMINI_KEY='AQ.Ab8RN6JOrD5kAHas732Emx1gClfSMgPCC9TnYny0dM6kgvCVBA';
+const GEMINI_URL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+const GROK_KEY='xai-8XfKzukzOVzhIqKlrCoMiiMp6UQbVtO7cb9ng6iSyKObCsDtQ5JYQgmQ9CRI0lpMNI0dPEMPYEUvvm6V';
+
+const BUSINESS_CONTEXT=`Tu es l'assistante IA de Neva, concept store lifestyle & bien-être à Bruxelles.
+Site: neva-co.be | Email: contact@neva-co.be | WhatsApp: +32 498 67 91 27
+Neva propose une sélection curatée et exclusive de produits lifestyle : décoration intérieure, mode et accessoires éco-responsables, soins naturels et cosmétiques bio, livres et art de vivre, bougies et parfums d'intérieur. Espace expérientiel avec pop-ups et ateliers réguliers.
+Questions fréquentes des clients: horaires d'ouverture (habituellement Mardi-Samedi 10h-18h30), si livraison disponible (oui, en Belgique), marques exclusives disponibles, cadeaux personnalisés, prochains événements ou ateliers.
+Contact: neva-co.be ou WhatsApp +32 498 67 91 27 ou contact@neva-co.be.
+Réponds en français, ton lifestyle inspirant et chaleureux, maximum 2 phrases + 1 emoji.`;
+
+const SUGGESTION_FLOWS={
+  initial:["🛍️ Quelles collections proposez-vous ?","📍 Horaires et adresse Neva","🎁 Idées cadeaux originaux","🗓️ Prochains ateliers et événements"],
+  afterShop:["🌿 Produits bien-être et soins","🏡 Décoration et lifestyle","✨ Nouveautés en boutique","📦 Livraison disponible ?"],
+  afterLocation:["🗺️ Adresse exacte de la boutique","⏰ Horaires d'ouverture","🚇 Comment venir en transports ?","🅿️ Stationnement à proximité ?"],
+  afterCadeau:["💝 Bon cadeau Neva disponible ?","🎀 Panier cadeau personnalisé","💌 Livraison du cadeau possible ?","👩‍💼 Conseil personnalisé cadeau"],
+  afterEvents:["📅 Prochains ateliers","📧 S'inscrire à la newsletter","🤝 Collaborer avec Neva","🎨 Ateliers créatifs — comment s'inscrire ?"]
+};
+
+let chatHistory=[],conversationState='initial';
+const AudioCtx=window.AudioContext||window.webkitAudioContext;let actx;
+function initAudio(){if(!actx)actx=new AudioCtx();}
+function playSound(type){
+  initAudio();if(actx.state==='suspended')actx.resume();
+  const o=actx.createOscillator(),g=actx.createGain(),now=actx.currentTime;
+  o.connect(g);g.connect(actx.destination);o.type='sine';
+  if(type==='open'){o.frequency.setValueAtTime(370,now);o.frequency.exponentialRampToValueAtTime(555,now+.18);o.frequency.exponentialRampToValueAtTime(666,now+.34);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.07,now+.05);g.gain.exponentialRampToValueAtTime(.001,now+.6);}
+  else if(type==='send'){o.frequency.setValueAtTime(520,now);g.gain.setValueAtTime(.06,now);g.gain.exponentialRampToValueAtTime(.001,now+.14);}
+  else{o.frequency.setValueAtTime(600,now);o.frequency.setValueAtTime(480,now+.1);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.048,now+.03);g.gain.exponentialRampToValueAtTime(.001,now+.32);}
+  o.start(now);o.stop(now+.65);
+}
+function toggleChat(){const win=document.getElementById('chat-window');const open=win.classList.toggle('open');if(open){playSound('open');if(chatHistory.length===0)setTimeout(()=>addBotMessage("Bienvenue chez Neva Brussels ✦ Votre univers lifestyle curated à Bruxelles. Comment puis-je vous aider ?"),420);}else{}}
+function addBotMessage(text){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='msg bot';div.textContent=text;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;playSound('receive');renderSuggestions();}
+function addUserMessage(text){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='msg user';div.textContent=text;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function showTyping(){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='typing';div.id='typing-indicator';div.innerHTML='<span></span><span></span><span></span>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function removeTyping(){document.getElementById('typing-indicator')?.remove();}
+
+function detectState(msg){
+  const m=msg.toLowerCase();
+  if(m.includes('produit')||m.includes('collection')||m.includes('shop')||m.includes('boutique')||m.includes('acheter')||m.includes('soin'))return 'afterShop';
+  if(m.includes('adresse')||m.includes('où')||m.includes('horaire')||m.includes('ouvert')||m.includes('trouver'))return 'afterLocation';
+  if(m.includes('cadeau')||m.includes('gift')||m.includes('offrir')||m.includes('bon'))return 'afterCadeau';
+  if(m.includes('event')||m.includes('atelier')||m.includes('popup')||m.includes('agenda'))return 'afterEvents';
+  return conversationState;
+}
+function renderSuggestions(){const sugs=SUGGESTION_FLOWS[conversationState]||SUGGESTION_FLOWS.initial;const c=document.getElementById('suggestions');c.innerHTML='';sugs.forEach(s=>{const btn=document.createElement('button');btn.className='sug-btn';btn.textContent=s;btn.onclick=()=>sendMessage(s);c.appendChild(btn);});}
+
+function inventerFallback(msg){
+  const w=msg.toLowerCase().split(/[\s,!?]+/).filter(x=>x.length>3&&!['avec','pour','dans','vous','nous','les','des','une','est','que','comment','quand'].includes(x));
+  const t=w.find(x=>x.length>4)||'votre demande';
+  const N=["produit", "collection", "article", "sélection", "découverte"];const V=["découvrir", "choisir", "offrir", "personnaliser", "sélectionner"];const A=["soigneusement sélectionné", "unique", "lifestyle"];
+  const _i=(_RC._iv=(_RC._iv||0)+1);
+  const templates=[
+    `Concernant ${t}, chez Neva nous savons ${V[_i%V.length]} cela de manière ${A[_i%A.length]} ✨`,
+    `Bonne question ! Notre expertise en lifestyle et concept store nous permet d'aborder ${t} avec notre approche ${A[_i%A.length]} 🌟`,
+    `Pour ${t}, nous recommandons ${V[_i%V.length]} de façon ${A[_i%A.length]} — c'est notre spécialité 💬`,
+    `${t.charAt(0).toUpperCase()+t.slice(1)} ? Chez Neva, notre ${N[_i%N.length]} ${A[_i%A.length]} répond à ce besoin ✨`
+  ];
+  return templates[_i%templates.length];
+}
+function getContextualFallback(msg){
+  const m=msg.toLowerCase();
+  const _RC=window._RC_neva||(window._RC_neva={});
+  const _SR={
+    shop:["Sélection lifestyle sur neva-co.be — mode, déco, bien-être, gastronomie 🛍️","Boutique physique ouverte mar-dim — rue du Page 52, Ixelles 🏡","Nouvelles collections chaque saison — suivez-nous pour les arrivages ✨"],
+    location:["Rue du Page 52, 1050 Ixelles (Bruxelles) — proche transports 📍","Horaires : mardi-samedi 11h-19h, dimanche 12h-17h 🕐","Tram ligne 81 (arrêt Page-Lesbroussart) ou à pied depuis place du Châtelain 🚋"],
+    cadeau:["Cartes cadeaux disponibles en boutique ou via contact@neva-co.be 🎁","Emballage cadeau premium avec ruban et carte manuscrite — sur demande 🎀","Box cadeaux thématiques : bien-être, gastronomie, déco — dès 45€ ✨"],
+    events:["Ateliers créatifs et soirées découverte — dates sur neva-co.be 🌟","Privatisation pour team buildings, EVJF ou soirées privées — contactez-nous 🎉","Prochains ateliers : calligraphie, création de bougies, dégustation 🕯️"],
+    default:["Bienvenue chez Neva, concept store lifestyle à Ixelles 🌿","Questions sur boutique, articles ou événements ? 💬","contact@neva-co.be ou neva-co.be 📧"]
+  };
+  let k='default';
+  if(m.includes('shop')||m.includes('acheter')||m.includes('produit')||m.includes('article'))k='shop';
+  else if(m.includes('adresse')||m.includes('où')||m.includes('trouver')||m.includes('horaire'))k='location';
+  else if(m.includes('cadeau')||m.includes('offrir')||m.includes('carte'))k='cadeau';
+  else if(m.includes('event')||m.includes('atelier')||m.includes('soirée'))k='events';
+  if(k==='default')return inventerFallback(msg);
+  _RC[k]=(_RC[k]||0);const r=_SR[k][_RC[k]%_SR[k].length];_RC[k]++;return r;
+}
+
+async function callGemini(){const res=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:BUSINESS_CONTEXT}]},contents:chatHistory,generationConfig:{maxOutputTokens:150,temperature:.78}})});if(!res.ok)throw new Error(`${res.status}`);const data=await res.json();const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;if(!text)throw new Error('empty');return text;}
+async function callGrok(userMsg){const messages=[{role:'system',content:BUSINESS_CONTEXT},...chatHistory.slice(0,-1).map(h=>({role:h.role==='model'?'assistant':'user',content:h.parts[0].text})),{role:'user',content:userMsg}];const res=await fetch('https://api.x.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROK_KEY}`},body:JSON.stringify({model:'grok-beta',messages,max_tokens:150})});if(!res.ok)throw new Error(`${res.status}`);const data=await res.json();return data?.choices?.[0]?.message?.content;}
+
+async function sendMessage(prefill){
+  const input=document.getElementById('chat-input');const text=(prefill||input.value).trim();if(!text)return;
+  input.value='';autoResize(input);document.getElementById('suggestions').innerHTML='';
+  addUserMessage(text);playSound('send');chatHistory.push({role:'user',parts:[{text}]});conversationState=detectState(text);showTyping();
+  let reply=null;try{reply=await callGemini();}catch(e1){try{reply=await callGrok(text);}catch(e2){}}
+  removeTyping();if(!reply)reply=getContextualFallback(text);
+  chatHistory.push({role:'model',parts:[{text:reply}]});addBotMessage(reply);
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function animCounter(id,target,suffix=''){const el=document.getElementById(id);let c=0;const step=Math.ceil(target/40);const t=setInterval(()=>{c=Math.min(c+step,target);el.textContent=c+suffix;if(c>=target)clearInterval(t);},40);}
+window.addEventListener('load',()=>{animCounter('s1',320,'+');animCounter('s2',45,'+');animCounter('s3',6);renderSuggestions();});
+</script>
+</body>
+</html>

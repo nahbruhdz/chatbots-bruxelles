@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lys Spa Brussels — Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--p1:#8a6060;--p2:#b08080;--p3:#c49a90;--bg-chat:rgba(255,252,250,.8);--msg-bot:rgba(255,255,255,.75);--border:rgba(176,128,128,.24);--text:#5a3a3a;--text-soft:rgba(90,58,58,.52);--sug-bg:rgba(255,255,255,.72);--sug-text:#7a4a4a;--sug-border:rgba(176,128,128,.3);--input-bg:rgba(255,255,255,.72);--hdr-a:#2a1818;--hdr-b:#3d2424;--stat-color:#8a6060}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#f8f4f0 0%,#ede4dc 50%,#e0d0c8 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+
+#chat-trigger{position:fixed;bottom:28px;right:28px;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;box-shadow:0 6px 26px rgba(138,96,96,.45);display:flex;align-items:center;justify-content:center;z-index:999;transition:transform .28s cubic-bezier(.34,1.56,.64,1);animation:trigger-pop .6s 1s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes trigger-pop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+#chat-trigger:hover{transform:scale(1.1) rotate(-6deg)}
+#chat-trigger svg{width:27px;height:27px;fill:#fff}
+#notif-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(138,96,96,.4);animation:ring-pulse 2.5s infinite}
+@keyframes ring-pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(1.4);opacity:0}100%{transform:scale(1.4);opacity:0}}
+
+#chat-window{position:fixed;bottom:108px;right:28px;width:372px;max-height:610px;border-radius:28px;background:var(--bg-chat);backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);border:1px solid var(--border);box-shadow:0 22px 65px rgba(100,60,60,.18),0 0 0 1px rgba(255,255,255,.55) inset;display:flex;flex-direction:column;overflow:hidden;z-index:998;opacity:0;transform:translateY(24px) scale(.87);pointer-events:none;transition:opacity .4s cubic-bezier(.34,1.56,.64,1),transform .4s cubic-bezier(.34,1.56,.64,1)}
+#chat-window.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+
+.chat-header{background:linear-gradient(160deg,var(--hdr-a),var(--hdr-b),#4a2e2e);padding:20px;display:flex;align-items:center;gap:13px;position:relative;overflow:hidden}
+.chat-header::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(196,154,144,.6),transparent)}
+.avatar{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.32);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.header-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:#fff;letter-spacing:.03em}
+.header-sub{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:5px;margin-top:3px}
+.status-dot{width:6px;height:6px;background:#b8f0c8;border-radius:50%;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.close-btn{margin-left:auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);border-radius:50%;width:30px;height:30px;cursor:pointer;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.close-btn:hover{background:rgba(255,255,255,.3)}
+
+.chat-messages{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(138,96,96,.18) transparent;max-height:305px}
+.msg{max-width:84%;padding:11px 15px;border-radius:20px;font-size:13.5px;line-height:1.6;opacity:0;animation:msg-fade .35s ease forwards}
+@keyframes msg-fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{background:var(--msg-bot);border:1px solid var(--border);border-bottom-left-radius:6px;align-self:flex-start;color:var(--text);box-shadow:0 2px 10px rgba(100,60,60,.08)}
+.msg.user{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-bottom-right-radius:6px;align-self:flex-end;box-shadow:0 2px 14px rgba(138,96,96,.3)}
+
+.typing{display:flex;align-items:center;gap:5px;padding:12px 16px;background:var(--msg-bot);border:1px solid var(--border);border-radius:20px;border-bottom-left-radius:6px;align-self:flex-start;max-width:72px;opacity:0;animation:msg-fade .3s ease forwards}
+.typing span{width:7px;height:7px;background:var(--p2);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+.suggestions{padding:8px 14px 10px;display:flex;flex-wrap:wrap;gap:6px}
+.sug-btn{background:var(--sug-bg);border:1px solid var(--sug-border);border-radius:20px;padding:7px 14px;font-size:12px;font-family:'Inter',sans-serif;color:var(--sug-text);cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1)}
+.sug-btn:hover{background:rgba(138,96,96,.1);border-color:var(--p1);transform:translateY(-2px);box-shadow:0 4px 12px rgba(138,96,96,.18)}
+
+.chat-input-area{padding:10px 14px 16px;border-top:1px solid var(--border);display:flex;gap:9px;align-items:flex-end}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 15px;font-size:13px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--text);outline:none;resize:none;max-height:80px;line-height:1.4;transition:border-color .2s,box-shadow .2s}
+.chat-input:focus{border-color:var(--p1);box-shadow:0 0 0 3px rgba(138,96,96,.1)}
+.chat-input::placeholder{color:rgba(100,60,60,.38)}
+
+.send-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(138,96,96,.38);transition:transform .22s cubic-bezier(.34,1.56,.64,1);animation:send-glow 3s infinite}
+@keyframes send-glow{0%,100%{box-shadow:0 4px 16px rgba(138,96,96,.38)}50%{box-shadow:0 4px 26px rgba(138,96,96,.65)}}
+.send-btn:hover{transform:scale(1.12)}.send-btn:active{transform:scale(.95)}
+.send-btn svg{width:17px;height:17px;fill:#fff}
+
+.stats-bar{background:rgba(138,96,96,.06);border-top:1px solid var(--border);padding:8px 14px;display:flex;justify-content:space-around}
+.stat{text-align:center}
+.stat-num{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--stat-color)}
+.stat-label{font-size:9.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.06em}
+
+
+</style>
+</head>
+<body>
+<button id="chat-trigger" onclick="toggleChat()">
+  <div id="notif-ring"></div>
+  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+</button>
+
+<div id="chat-window">
+  <div class="chat-header">
+    <div class="avatar">🌸</div>
+    <div>
+      <div class="header-name">The Lys Spa</div>
+      <div class="header-sub"><span class="status-dot"></span>Votre oasis de sérénité · Bruxelles</div>
+    </div>
+    <button class="close-btn" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-messages" id="messages"></div>
+  <div class="suggestions" id="suggestions"></div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num" id="s1">0</div><div class="stat-label">Soins réalisés</div></div>
+    <div class="stat"><div class="stat-num" id="s2">0</div><div class="stat-label">Types de massages</div></div>
+    <div class="stat"><div class="stat-num" id="s3">0</div><div class="stat-label">Note Google</div></div>
+  </div>
+
+  
+
+  <div class="chat-input-area">
+    <textarea id="chat-input" class="chat-input" rows="1" placeholder="Votre question sur nos soins…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<script>
+const GEMINI_KEY='AQ.Ab8RN6JOrD5kAHas732Emx1gClfSMgPCC9TnYny0dM6kgvCVBA';
+const GEMINI_URL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+const GROK_KEY='xai-8XfKzukzOVzhIqKlrCoMiiMp6UQbVtO7cb9ng6iSyKObCsDtQ5JYQgmQ9CRI0lpMNI0dPEMPYEUvvm6V';
+
+const BUSINESS_CONTEXT=`Tu es l'assistante IA de The Lys Spa Brussels, spa de luxe à Bruxelles.
+Site: thelysspa-brussels.be | Email: booking@thelysspa-brussels.be | WhatsApp: +32 489 10 00 48
+Services: massages relaxants (60/90min), massages aux pierres chaudes, soins du visage anti-âge et hydratants, enveloppements corps, rituel hammam, soins en duo pour couples, réflexologie plantaire.
+Questions fréquentes: durée et tarifs des massages, disponibilités le week-end (souvent complet, mieux de réserver 1 semaine à l'avance), si les bons cadeaux sont disponibles (oui), comment se préparer (arriver 15min avant, ne pas manger juste avant), si c'est adapté aux femmes enceintes (uniquement certains soins).
+Réservation: thelysspa-brussels.be ou WhatsApp +32 489 10 00 48 ou booking@thelysspa-brussels.be.
+Réponds en français, ton élégant et apaisant, maximum 2 phrases + 1 emoji. Vouvoie le client.`;
+
+const SUGGESTION_FLOWS={
+  initial:["💆 Je souhaite réserver un massage","🌸 Quels soins proposez-vous ?","💑 Soin en duo pour deux personnes","🎁 Offrir un bon cadeau spa"],
+  afterBooking:["📅 Disponibilités ce week-end","⏰ Durée du massage relaxant","🧴 Comment me préparer pour ma visite","❓ Conditions d'annulation"],
+  afterSoins:["👐 Massages — types et durées","✨ Soins visage anti-âge","♨️ Rituel hammam","💆 Réflexologie plantaire"],
+  afterCouple:["🥂 Tarif soin duo","🎀 Bon cadeau duo romantique","🕯️ Quelle ambiance pour deux ?","📅 Réserver pour deux"],
+  afterCadeau:["💳 Montant libre ou forfait ?","📬 Envoi par email possible ?","🎁 Valable combien de temps ?","📞 Commander par téléphone"]
+};
+
+let chatHistory=[],conversationState='initial';
+const AudioCtx=window.AudioContext||window.webkitAudioContext;let actx;
+function initAudio(){if(!actx)actx=new AudioCtx();}
+function playSound(type){
+  initAudio();if(actx.state==='suspended')actx.resume();
+  const o=actx.createOscillator(),g=actx.createGain(),now=actx.currentTime;
+  o.connect(g);g.connect(actx.destination);o.type='sine';
+  if(type==='open'){o.frequency.setValueAtTime(330,now);o.frequency.exponentialRampToValueAtTime(495,now+.2);o.frequency.exponentialRampToValueAtTime(594,now+.38);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.07,now+.06);g.gain.exponentialRampToValueAtTime(.001,now+.65);}
+  else if(type==='send'){o.frequency.setValueAtTime(480,now);g.gain.setValueAtTime(.055,now);g.gain.exponentialRampToValueAtTime(.001,now+.14);}
+  else{o.frequency.setValueAtTime(528,now);o.frequency.setValueAtTime(396,now+.12);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.045,now+.03);g.gain.exponentialRampToValueAtTime(.001,now+.35);}
+  o.start(now);o.stop(now+.7);
+}
+function toggleChat(){const win=document.getElementById('chat-window');const open=win.classList.toggle('open');if(open){playSound('open');if(chatHistory.length===0)setTimeout(()=>addBotMessage("Bienvenue au Lys Spa Bruxelles 🌸 Comment puis-je vous aider à organiser votre moment de détente ?"),450);}else{}}
+function addBotMessage(text){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='msg bot';div.textContent=text;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;playSound('receive');renderSuggestions();}
+function addUserMessage(text){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='msg user';div.textContent=text;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function showTyping(){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='typing';div.id='typing-indicator';div.innerHTML='<span></span><span></span><span></span>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function removeTyping(){document.getElementById('typing-indicator')?.remove();}
+
+function detectState(msg){
+  const m=msg.toLowerCase();
+  if(m.includes('réserv')||m.includes('rdv')||m.includes('prendre')&&m.includes('massage'))return 'afterBooking';
+  if(m.includes('couple')||m.includes('duo')||m.includes('deux')||m.includes('romantique'))return 'afterCouple';
+  if(m.includes('cadeau')||m.includes('gift')||m.includes('offrir')||m.includes('bon'))return 'afterCadeau';
+  if(m.includes('soin')||m.includes('massage')||m.includes('visage')||m.includes('hammam')||m.includes('soin'))return 'afterSoins';
+  return conversationState;
+}
+function renderSuggestions(){const sugs=SUGGESTION_FLOWS[conversationState]||SUGGESTION_FLOWS.initial;const c=document.getElementById('suggestions');c.innerHTML='';sugs.forEach(s=>{const btn=document.createElement('button');btn.className='sug-btn';btn.textContent=s;btn.onclick=()=>sendMessage(s);c.appendChild(btn);});}
+
+function inventerFallback(msg){
+  const w=msg.toLowerCase().split(/[\s,!?]+/).filter(x=>x.length>3&&!['avec','pour','dans','vous','nous','les','des','une','est','que','comment','quand'].includes(x));
+  const t=w.find(x=>x.length>4)||'votre demande';
+  const N=["soin", "détente", "relaxation", "rituel", "hydratation"];const V=["revitaliser", "détendre", "soigner", "chouchouter", "régénérer"];const A=["sur mesure", "aux produits naturels", "personnalisé"];
+  const _i=(_RC._iv=(_RC._iv||0)+1);
+  const templates=[
+    `Concernant ${t}, chez Lys Spa nous savons ${V[_i%V.length]} cela de manière ${A[_i%A.length]} ✨`,
+    `Bonne question ! Notre expertise en soins spa et bien-être nous permet d'aborder ${t} avec notre approche ${A[_i%A.length]} 🌟`,
+    `Pour ${t}, nous recommandons ${V[_i%V.length]} de façon ${A[_i%A.length]} — c'est notre spécialité 💬`,
+    `${t.charAt(0).toUpperCase()+t.slice(1)} ? Chez Lys Spa, notre ${N[_i%N.length]} ${A[_i%A.length]} répond à ce besoin ✨`
+  ];
+  return templates[_i%templates.length];
+}
+function getContextualFallback(msg){
+  const m=msg.toLowerCase();
+  const _RC=window._RC_lysspa||(window._RC_lysspa={});
+  const _SR={
+    rdv:["Réservez votre soin via thelysspa-brussels.be ou booking@thelysspa-brussels.be 📅","Créneaux disponibles 7j/7 sur thelysspa-brussels.be ✨","Écrivez à booking@thelysspa-brussels.be avec le soin souhaité 🌸"],
+    tarifs:["Soins à partir de 65€ — détails complets sur thelysspa-brussels.be 💰","Soin visage Lys Royal (75 min) à 120€ : gommage + masque + modelage 🌿","Cartes cadeaux disponibles dès 50€ 🎁"],
+    soins:["Massages, soins visage, gommages — tous aux produits naturels 🌿","Soin 'Voyage Sensoriel' (120 min) : vapeur + gommage + massage aux huiles précieuses ✨","Anti-stress, drainage lymphatique, soins minceur — sur demande 💆"],
+    couple:["Cabine duo pour un soin en toute intimité — réservation 48h à l'avance 🌸","Rituel couple (2x 90 min) : bain de pétales + gommage + massage ✨","Réservez sur thelysspa-brussels.be — expérience sur mesure pour deux 💕"],
+    cadeau:["Cartes cadeaux disponibles via booking@thelysspa-brussels.be 🎁","Cartes valables 1 an, toutes valeurs — livraison premium possible 🌸","Box 'Duo Zen' : notre plus populaire 💌"],
+    default:["Des questions sur nos soins ou disponibilités ? 🌸","Découvrez thelysspa-brussels.be — relaxation au cœur de Bruxelles ✨","Contact : booking@thelysspa-brussels.be 📧"]
+  };
+  let k='default';
+  if(m.includes('réserv')||m.includes('rdv')||m.includes('rendez'))k='rdv';
+  else if(m.includes('tarif')||m.includes('prix')||m.includes('combien'))k='tarifs';
+  else if(m.includes('couple')||m.includes('duo')||m.includes('deux'))k='couple';
+  else if(m.includes('cadeau')||m.includes('offrir')||m.includes('carte'))k='cadeau';
+  else if(m.includes('soin')||m.includes('massage')||m.includes('traitement'))k='soins';
+  if(k==='default')return inventerFallback(msg);
+  _RC[k]=(_RC[k]||0);const r=_SR[k][_RC[k]%_SR[k].length];_RC[k]++;return r;
+}
+
+async function callGemini(){const res=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:BUSINESS_CONTEXT}]},contents:chatHistory,generationConfig:{maxOutputTokens:150,temperature:.75}})});if(!res.ok)throw new Error(`${res.status}`);const data=await res.json();const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;if(!text)throw new Error('empty');return text;}
+async function callGrok(userMsg){const messages=[{role:'system',content:BUSINESS_CONTEXT},...chatHistory.slice(0,-1).map(h=>({role:h.role==='model'?'assistant':'user',content:h.parts[0].text})),{role:'user',content:userMsg}];const res=await fetch('https://api.x.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROK_KEY}`},body:JSON.stringify({model:'grok-beta',messages,max_tokens:150})});if(!res.ok)throw new Error(`${res.status}`);const data=await res.json();return data?.choices?.[0]?.message?.content;}
+
+async function sendMessage(prefill){
+  const input=document.getElementById('chat-input');const text=(prefill||input.value).trim();if(!text)return;
+  input.value='';autoResize(input);document.getElementById('suggestions').innerHTML='';
+  addUserMessage(text);playSound('send');chatHistory.push({role:'user',parts:[{text}]});conversationState=detectState(text);showTyping();
+  let reply=null;try{reply=await callGemini();}catch(e1){try{reply=await callGrok(text);}catch(e2){}}
+  removeTyping();if(!reply)reply=getContextualFallback(text);
+  chatHistory.push({role:'model',parts:[{text:reply}]});addBotMessage(reply);
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function animCounter(id,target,suffix=''){const el=document.getElementById(id);let c=0;const step=Math.ceil(target/40);const t=setInterval(()=>{c=Math.min(c+step,target);el.textContent=c+suffix;if(c>=target)clearInterval(t);},40);}
+window.addEventListener('load',()=>{animCounter('s1',1400,'+');animCounter('s2',14,'+');setTimeout(()=>document.getElementById('s3').textContent='4.9★',500);renderSuggestions();});
+</script>
+</body>
+</html>

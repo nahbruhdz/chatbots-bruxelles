@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Studio Brussels — Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--p1:#c9a84c;--p2:#f0d070;--bg-chat:rgba(13,13,20,.85);--msg-bot:rgba(255,255,255,.06);--border:rgba(201,168,76,.24);--text:rgba(232,228,210,.9);--text-soft:rgba(232,228,210,.45);--sug-bg:rgba(201,168,76,.1);--sug-text:#f0d070;--sug-border:rgba(201,168,76,.26);--input-bg:rgba(255,255,255,.05);--hdr-a:#0d0e10;--hdr-b:#181608;--stat-color:#f0d070}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0d0d0f 0%,#1a1a2e 50%,#16213e 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+
+#chat-trigger{position:fixed;bottom:28px;right:28px;width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;box-shadow:0 6px 28px rgba(201,168,76,.5);display:flex;align-items:center;justify-content:center;z-index:999;transition:transform .28s cubic-bezier(.34,1.56,.64,1);animation:trigger-pop .6s 1s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes trigger-pop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+#chat-trigger:hover{transform:scale(1.1) rotate(-5deg)}
+#chat-trigger svg{width:28px;height:28px;fill:#0d0d0f}
+#notif-ring{position:absolute;inset:-5px;border-radius:18px;border:2px solid rgba(201,168,76,.4);animation:ring-pulse 2.5s infinite}
+@keyframes ring-pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(1.35);opacity:0}100%{transform:scale(1.35);opacity:0}}
+
+#chat-window{position:fixed;bottom:108px;right:28px;width:372px;max-height:605px;border-radius:22px;background:var(--bg-chat);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6);border:1px solid var(--border);box-shadow:0 26px 72px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.04) inset;display:flex;flex-direction:column;overflow:hidden;z-index:998;opacity:0;transform:scale(.86) translateY(24px);pointer-events:none;transition:opacity .38s cubic-bezier(.34,1.56,.64,1),transform .38s cubic-bezier(.34,1.56,.64,1)}
+#chat-window.open{opacity:1;transform:scale(1) translateY(0);pointer-events:all}
+
+.chat-header{background:linear-gradient(145deg,var(--hdr-a),var(--hdr-b));border-bottom:1px solid var(--border);padding:18px 20px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.chat-header::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--p1),var(--p2),var(--p1),transparent)}
+.avatar{width:44px;height:44px;border-radius:12px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.header-name{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--p1);letter-spacing:.05em;text-transform:uppercase}
+.header-sub{font-size:11px;color:var(--text-soft);display:flex;align-items:center;gap:5px;margin-top:3px}
+.status-dot{width:6px;height:6px;background:#4caf50;border-radius:50%;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.close-btn{margin-left:auto;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.22);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--p1);font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.close-btn:hover{background:rgba(201,168,76,.24)}
+
+.chat-messages{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(201,168,76,.18) transparent;max-height:300px}
+.msg{max-width:84%;padding:11px 15px;border-radius:18px;font-size:13.5px;line-height:1.58;opacity:0;animation:msg-in .32s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes msg-in{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.msg.bot{background:var(--msg-bot);border:1px solid var(--border);border-bottom-left-radius:6px;align-self:flex-start;color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.msg.user{background:linear-gradient(135deg,var(--p1),var(--p2));color:#0d0d0f;font-weight:600;border-bottom-right-radius:6px;align-self:flex-end;box-shadow:0 2px 16px rgba(201,168,76,.4)}
+
+.typing{display:flex;align-items:center;gap:5px;padding:12px 16px;background:var(--msg-bot);border:1px solid var(--border);border-radius:18px;border-bottom-left-radius:6px;align-self:flex-start;max-width:72px;opacity:0;animation:msg-in .3s ease forwards}
+.typing span{width:7px;height:7px;background:var(--p1);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+
+.suggestions{padding:8px 14px 10px;display:flex;flex-wrap:wrap;gap:6px}
+.sug-btn{background:var(--sug-bg);border:1px solid var(--sug-border);border-radius:20px;padding:7px 14px;font-size:12px;font-family:'Inter',sans-serif;color:var(--sug-text);cursor:pointer;transition:all .22s cubic-bezier(.34,1.56,.64,1);white-space:nowrap}
+.sug-btn:hover{background:rgba(201,168,76,.22);border-color:rgba(201,168,76,.5);transform:translateY(-2px);box-shadow:0 4px 14px rgba(201,168,76,.25)}
+.sug-btn:active{transform:translateY(0)}
+
+.chat-input-area{padding:10px 14px 16px;border-top:1px solid var(--border);display:flex;gap:9px;align-items:flex-end}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 15px;font-size:13px;font-family:'Inter',sans-serif;background:var(--input-bg);color:var(--text);outline:none;resize:none;max-height:80px;line-height:1.4;transition:border-color .2s,box-shadow .2s}
+.chat-input:focus{border-color:var(--p1);box-shadow:0 0 0 3px rgba(201,168,76,.14)}
+.chat-input::placeholder{color:rgba(220,200,140,.3)}
+
+.send-btn{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--p1),var(--p2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(201,168,76,.42);transition:transform .22s cubic-bezier(.34,1.56,.64,1);animation:send-glow 3s infinite}
+@keyframes send-glow{0%,100%{box-shadow:0 4px 16px rgba(201,168,76,.42)}50%{box-shadow:0 4px 28px rgba(201,168,76,.72)}}
+.send-btn:hover{transform:scale(1.1)}.send-btn:active{transform:scale(.95)}
+.send-btn svg{width:17px;height:17px;fill:#0d0d0f}
+
+.stats-bar{background:rgba(201,168,76,.05);border-top:1px solid var(--border);padding:8px 14px;display:flex;justify-content:space-around}
+.stat{text-align:center}
+.stat-num{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;color:var(--stat-color)}
+.stat-label{font-size:9.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.06em}
+
+
+</style>
+</head>
+<body>
+<button id="chat-trigger" onclick="toggleChat()">
+  <div id="notif-ring"></div>
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+</button>
+
+<div id="chat-window">
+  <div class="chat-header">
+    <div class="avatar">🏋️</div>
+    <div>
+      <div class="header-name">The Studio Brussels</div>
+      <div class="header-sub"><span class="status-dot"></span>Assistant fitness · Disponible 24h/24</div>
+    </div>
+    <button class="close-btn" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-messages" id="messages"></div>
+  <div class="suggestions" id="suggestions"></div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num" id="s1">0</div><div class="stat-label">Membres actifs</div></div>
+    <div class="stat"><div class="stat-num" id="s2">0</div><div class="stat-label">Cours par semaine</div></div>
+    <div class="stat"><div class="stat-num" id="s3">0</div><div class="stat-label">Instructeurs certifiés</div></div>
+  </div>
+
+  
+
+  <div class="chat-input-area">
+    <textarea id="chat-input" class="chat-input" rows="1" placeholder="Votre question fitness…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<script>
+const GEMINI_KEY='AQ.Ab8RN6JOrD5kAHas732Emx1gClfSMgPCC9TnYny0dM6kgvCVBA';
+const GEMINI_URL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+const GROK_KEY='xai-8XfKzukzOVzhIqKlrCoMiiMp6UQbVtO7cb9ng6iSyKObCsDtQ5JYQgmQ9CRI0lpMNI0dPEMPYEUvvm6V';
+
+const BUSINESS_CONTEXT=`Tu es l'assistant IA de The Studio Brussels, studio de fitness et bien-être premium à Bruxelles.
+Site: thestudio.brussels | Email: info@thestudio.brussels | WhatsApp: +32 497 695 253
+Disciplines proposées: yoga (Vinyasa, Hatha, Yin), pilates, HIIT, cardio boxing, barre, méditation, stretching deep.
+Abonnements: cours à l'unité, carte 10 cours, abonnement mensuel illimité, personal training disponible.
+Questions fréquentes: si les cours sont adaptés aux débutants (oui), si on peut essayer avant de s'abonner (oui, cours découverte), horaires matin/soir disponibles, taille des groupes (max 12 personnes), quoi apporter.
+Réservation: thestudio.brussels ou WhatsApp +32 497 695 253.
+Réponds en français, ton motivant et professionnel, maximum 2 phrases + 1 emoji. Sois direct et concret.`;
+
+const SUGGESTION_FLOWS={
+  initial:["📅 Réserver un cours","💪 Cours pour débutants","💰 Tarifs et abonnements","🧘 Quels styles de yoga proposez-vous ?"],
+  afterBooking:["⏰ Cours du matin disponibles ?","👟 Quoi apporter au cours ?","📱 Peut-on réserver en ligne ?","❓ Politique d'annulation"],
+  afterCours:["🔥 HIIT et cardio","🧘 Yoga Vinyasa","🤸 Pilates reformer","💪 Personal training"],
+  afterTarifs:["🎟️ Abonnement illimité","🎁 Cours découverte gratuit ?","💳 Paiement mensuel possible ?","📦 Carte 10 cours"],
+  afterYoga:["🌊 Vinyasa vs Hatha — quelle différence ?","🌙 Cours le soir disponibles ?","🆕 Je suis grand débutant","📅 Réserver un cours yoga"]
+};
+
+let chatHistory=[],conversationState='initial',chatOpen=false;
+const AudioCtx=window.AudioContext||window.webkitAudioContext;let actx;
+function initAudio(){if(!actx)actx=new AudioCtx();}
+function playSound(type){
+  initAudio();if(actx.state==='suspended')actx.resume();
+  const o=actx.createOscillator(),g=actx.createGain(),now=actx.currentTime;
+  o.connect(g);g.connect(actx.destination);o.type='sine';
+  if(type==='open'){o.frequency.setValueAtTime(420,now);o.frequency.exponentialRampToValueAtTime(630,now+.12);o.frequency.exponentialRampToValueAtTime(780,now+.24);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.08,now+.04);g.gain.exponentialRampToValueAtTime(.001,now+.5);}
+  else if(type==='send'){o.frequency.setValueAtTime(600,now);o.frequency.exponentialRampToValueAtTime(750,now+.08);g.gain.setValueAtTime(.07,now);g.gain.exponentialRampToValueAtTime(.001,now+.14);}
+  else{o.frequency.setValueAtTime(720,now);o.frequency.setValueAtTime(560,now+.1);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.055,now+.02);g.gain.exponentialRampToValueAtTime(.001,now+.3);}
+  o.start(now);o.stop(now+.6);
+}
+function toggleChat(){const win=document.getElementById('chat-window');chatOpen=!chatOpen;win.classList.toggle('open',chatOpen);if(chatOpen){playSound('open');if(chatHistory.length===0)setTimeout(()=>addBotMessage("Bienvenue au Studio Brussels ! 💪 Je suis votre assistant fitness. Que puis-je faire pour vous ?"),420);}}
+function addBotMessage(text){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='msg bot';div.textContent=text;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;playSound('receive');renderSuggestions();}
+function addUserMessage(text){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='msg user';div.textContent=text;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function showTyping(){const msgs=document.getElementById('messages');const div=document.createElement('div');div.className='typing';div.id='typing-indicator';div.innerHTML='<span></span><span></span><span></span>';msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;}
+function removeTyping(){document.getElementById('typing-indicator')?.remove();}
+
+function detectState(msg){
+  const m=msg.toLowerCase();
+  if(m.includes('réserv')||m.includes('rdv')||m.includes('inscrire')||m.includes('place')||m.includes('cours')&&m.includes('prendre'))return 'afterBooking';
+  if(m.includes('yoga')||m.includes('vinyasa')||m.includes('hatha')||m.includes('yin')||m.includes('méditat'))return 'afterYoga';
+  if(m.includes('tarif')||m.includes('prix')||m.includes('abonne')||m.includes('combien')||m.includes('coût'))return 'afterTarifs';
+  if(m.includes('cours')||m.includes('hiit')||m.includes('pilate')||m.includes('cardio')||m.includes('barre'))return 'afterCours';
+  return conversationState;
+}
+function renderSuggestions(){const sugs=SUGGESTION_FLOWS[conversationState]||SUGGESTION_FLOWS.initial;const c=document.getElementById('suggestions');c.innerHTML='';sugs.forEach(s=>{const btn=document.createElement('button');btn.className='sug-btn';btn.textContent=s;btn.onclick=()=>sendMessage(s);c.appendChild(btn);});}
+
+function inventerFallback(msg){
+  const w=msg.toLowerCase().split(/[\s,!?]+/).filter(x=>x.length>3&&!['avec','pour','dans','vous','nous','les','des','une','est','que','comment','quand'].includes(x));
+  const t=w.find(x=>x.length>4)||'votre demande';
+  const N=["séance", "cours", "posture", "énergie", "bien-être"];const V=["pratiquer", "progresser", "renforcer", "équilibrer", "découvrir"];const A=["adapté à votre niveau", "accessible à tous", "progressif"];
+  const _i=(_RC._iv=(_RC._iv||0)+1);
+  const templates=[
+    `Concernant ${t}, chez The Studio Brussels nous savons ${V[_i%V.length]} cela de manière ${A[_i%A.length]} ✨`,
+    `Bonne question ! Notre expertise en yoga et fitness nous permet d'aborder ${t} avec notre approche ${A[_i%A.length]} 🌟`,
+    `Pour ${t}, nous recommandons ${V[_i%V.length]} de façon ${A[_i%A.length]} — c'est notre spécialité 💬`,
+    `${t.charAt(0).toUpperCase()+t.slice(1)} ? Chez The Studio Brussels, notre ${N[_i%N.length]} ${A[_i%A.length]} répond à ce besoin ✨`
+  ];
+  return templates[_i%templates.length];
+}
+function getContextualFallback(msg){
+  const m=msg.toLowerCase();
+  const _RC=window._RC_thestudio||(window._RC_thestudio={});
+  const _SR={
+    rdv:["Réservez un cours sur thestudio.brussels — inscription en quelques clics 📅","Les créneaux du matin partent vite ! Réservez sur thestudio.brussels 🧘","Email : info@thestudio.brussels avec vos disponibilités — on trouve un créneau ✉️"],
+    tarifs:["Nos formules : 20€/séance ou 150€/mois illimité — détails sur thestudio.brussels 💰","Premier cours d'essai offert pour tout nouvel inscrit 🎁","Pack 10 séances à 170€, valable 3 mois — flexibilité totale ✨"],
+    cours:["Yoga, pilates, HIIT, barre — +40 cours par semaine, tous niveaux 🧘","Planning complet sur thestudio.brussels — filtrez par discipline et niveau 📋","Cours en petit groupe (max 12) pour un suivi personnalisé 🏋️"],
+    yoga:["Vinyasa, hatha, yin et yoga restauratif — pour tous les niveaux 🧘","Vinyasa du matin (7h30) pour démarrer la journée — réservez votre tapis en ligne 🌅","Yin yoga chaque vendredi soir — parfait pour décompresser 🌙"],
+    default:["Une question sur nos cours, tarifs ou planning ? Je suis là 💬","Explorez thestudio.brussels — yoga, pilates, fitness, toutes les semaines 🌟","Pour infos : info@thestudio.brussels 📧"]
+  };
+  let k='default';
+  if(m.includes('réserv')||m.includes('inscrire')||m.includes('rdv'))k='rdv';
+  else if(m.includes('tarif')||m.includes('prix')||m.includes('abonne')||m.includes('combien'))k='tarifs';
+  else if(m.includes('yoga')||m.includes('yin')||m.includes('vinyasa')||m.includes('médita'))k='yoga';
+  else if(m.includes('cours')||m.includes('planning')||m.includes('séance'))k='cours';
+  if(k==='default')return inventerFallback(msg);
+  _RC[k]=(_RC[k]||0);const r=_SR[k][_RC[k]%_SR[k].length];_RC[k]++;return r;
+}
+
+async function callGemini(){const res=await fetch(GEMINI_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:BUSINESS_CONTEXT}]},contents:chatHistory,generationConfig:{maxOutputTokens:150,temperature:.75}})});if(!res.ok)throw new Error(`${res.status}`);const data=await res.json();const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;if(!text)throw new Error('empty');return text;}
+async function callGrok(userMsg){const messages=[{role:'system',content:BUSINESS_CONTEXT},...chatHistory.slice(0,-1).map(h=>({role:h.role==='model'?'assistant':'user',content:h.parts[0].text})),{role:'user',content:userMsg}];const res=await fetch('https://api.x.ai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROK_KEY}`},body:JSON.stringify({model:'grok-beta',messages,max_tokens:150})});if(!res.ok)throw new Error(`${res.status}`);const data=await res.json();return data?.choices?.[0]?.message?.content;}
+
+async function sendMessage(prefill){
+  const input=document.getElementById('chat-input');const text=(prefill||input.value).trim();if(!text)return;
+  input.value='';autoResize(input);document.getElementById('suggestions').innerHTML='';
+  addUserMessage(text);playSound('send');chatHistory.push({role:'user',parts:[{text}]});conversationState=detectState(text);showTyping();
+  let reply=null;try{reply=await callGemini();}catch(e1){try{reply=await callGrok(text);}catch(e2){}}
+  removeTyping();if(!reply)reply=getContextualFallback(text);
+  chatHistory.push({role:'model',parts:[{text:reply}]});addBotMessage(reply);
+}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,80)+'px';}
+function animCounter(id,target,suffix=''){const el=document.getElementById(id);let c=0;const step=Math.ceil(target/40);const t=setInterval(()=>{c=Math.min(c+step,target);el.textContent=c+suffix;if(c>=target)clearInterval(t);},40);}
+window.addEventListener('load',()=>{animCounter('s1',380,'+');animCounter('s2',28,'+');animCounter('s3',9);renderSuggestions();});
+</script>
+</body>
+</html>
